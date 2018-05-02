@@ -1,0 +1,109 @@
+# Customise this file, documentation can be found here:
+# https://github.com/fastlane/fastlane/tree/master/fastlane/docs
+# All available actions: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Actions.md
+
+# This is the minimum version number required.
+# Update this, if you use features of a newer version
+fastlane_version "2.50.0"
+
+default_platform :ios
+
+fastlane_require 'filelock'
+
+platform :ios do
+
+  # FIXME Add the project name here. This is also the scheme that will be built.
+  project_name = 'MyApp'
+  archive_path = "output/#{project_name}"
+  ipa_path = "output/#{project_name}.ipa"
+
+  before_all do
+    xcversion version: "~> 9.0"
+    setup_jenkins(result_bundle: false, force: true)
+  end
+
+  desc "Carthage bootstrap"
+  lane :carthage_bootstrap do
+    carthage platform: "iOS"
+  end
+
+  desc "Creates an archive of the application"
+  lane :create_archive do
+    
+    # Update the version number of the app based on the BUILD_NUMBER
+    update_version
+    
+    # Builds for Release. Create the archive and the IPA.
+    gym(scheme: project_name, archive_path: archive_path)
+    
+    # Make sure we have a zipped version of the archive directory.
+    backup_xcarchive(versioned: false)
+  end
+
+  desc "Runs all the tests"
+  lane :test do
+    
+    # Lock here for up to 15m so multiple, concurrent simulator runs don't fail.
+    Filelock '/tmp/simulator-fastlane.lock', :wait => 900 do
+      # Builds for Debug so all the tests can run.
+      scan(scheme: project_name, code_coverage: true, skip_slack: true, formatter: 'xcpretty-json-formatter')
+    end
+    
+    # Gather code coverage data. More info in the .slather.yml file.
+    slather(use_bundle_exec: true)
+  end
+  
+  desc "Uploads the build to TestFlight"
+  lane :upload_testflight do
+        
+    pilot(ipa: ipa_path)
+    
+    slack(
+      message: "New TestFlight build (" + ENV['BUILD_NUMBER'] + ") available. :rocket:",
+      success: true
+    )
+  end
+  
+  desc ""
+  lane :upload_crashlytics do
+    
+    # Export the existing archive.
+    gym(scheme: project_name, skip_build_archive: true, archive_path: archive_path, export_method: "ad-hoc")
+    
+    crashlytics(
+      crashlytics_path: 'Vendor/Crashlytics.framework',
+      api_token: ENV['CRASHLYTICS_API_KEY'],
+      build_secret: ENV['CRASHLYTICS_BUILD_SECRET'],
+      ipa_path: "#{Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]}",
+      notifications: false
+    )
+    
+    slack(
+      message: "New Crashlytics build (" + ENV['BUILD_NUMBER'] + ") available. :rocket:",
+      success: true
+    )
+  end
+  
+  private_lane :update_version do
+    build_number = ENV['BUILD_NUMBER'].to_i
+
+    increment_build_number(
+      build_number: build_number # specify specific build number (optional, omitting it increments by one)
+    )
+  end
+  
+  desc "Deploy a new version to the App Store"
+  lane :deploy_appstore do
+    
+    update_version
+    
+    deliver(force: true, ipa: ipa_path)
+  end
+  
+  error do |lane, exception|
+    slack(
+      message: "An error occurred: `" + exception.message + "`",
+      success: false
+    )
+  end
+end

@@ -1,0 +1,6 @@
+app_identifier "com.velosmobile.MyApp" # The bundle identifier of your app
+
+apple_id "apple@velosmobile.com" # Velos Mobile main account
+
+team_id "DAPFLRCVJA"  # Velos Mobile Developer Portal Team ID
+itc_team_id "1202743" # Velos Mobile iTunes Connect Team

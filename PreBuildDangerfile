@@ -1,0 +1,23 @@
+# Make it more obvious that a PR is a work in progress and shouldn't be merged yet
+warn("PR is classed as Work in Progress") if github.pr_title.include? "[WIP]"
+
+# Warn when there is a big PR
+warn("Big PR") if git.lines_of_code > 500
+
+if git.modified_files.include? "Cartfile" and !(git.modified_files.include? "Cartfile.resolved")
+  warn("Cartfile should also modify Cartfile.resolved")  
+end
+
+if git.modified_files.include? "Gemfile" and !(git.modified_files.include? "Gemfile.lock")
+  warn("Gemfile should also modify Gemfile.lock")  
+end
+
+if git.modified_files.include? "Localizable.strings" and !(git.modified_files.include? "R.generated.swift")
+  warn("Localizable.strings should also modify R.generated.swift")
+end
+
+if status_report[:warnings].empty? and status_report[:errors].empty?
+  markdown ":white_check_mark: No pre-build issues found"
+end
+
+missed_localizable_strings.check_localizable_omissions

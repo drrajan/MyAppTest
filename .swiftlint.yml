@@ -1,0 +1,33 @@
+disabled_rules:
+  - line_length
+  - todo
+opt_in_rules:
+  - force_unwrapping
+identifier_name:
+  min_length:
+    error: 2
+  excluded:
+    - id
+    - x
+    - y
+    - !str no
+file_length:
+  warning: 600
+  error: 1000
+large_tuple:
+  warning: 3
+cyclomatic_complexity:
+  ignores_case_statements: true
+
+custom_rules:
+  todo_jira:
+    name: "TODO/FIXME JIRA"
+    regex: "(TODO|FIXME)(?!:? ?\\([A-Z]+-\\d+\\)).+"
+    match_kinds:
+      - comment
+    message: "All TODO/FIXME comments must have an associated JIRA of the form '// TODO(XXX-100): ...'"
+    severity: warning
+
+excluded:
+  - Carthage
+  - MyApp/R.generated.swift

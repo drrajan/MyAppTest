@@ -1,0 +1,5 @@
+module: MyApp
+min_acl: public
+output: Documentation
+documentation: Documentation/Guides/*.md
+disable_search: true

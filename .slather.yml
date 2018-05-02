@@ -1,0 +1,12 @@
+coverage_service: html
+xcodeproj: MyApp.xcodeproj
+scheme: MyApp
+build_directory: derivedData
+output_directory: output/slather
+source_files: "./**/*.{m,mm,swift}"
+ignore:
+  - ./**/*/Xcode*
+  - MyAppTests/*
+  - MyAppUITests/*
+  - Carthage/**
+  - MyApp/R.generated.swift
